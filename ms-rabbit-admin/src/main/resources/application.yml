@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: ms-rabbit-admin
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASS:admin123}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/0e309e18-e3ab-4256-8fcf-5608cfe52cbe/v2.0
+          audiences:
+            - c96eeade-7cad-46b0-979f-ca4e30aa8889
+            - api://c96eeade-7cad-46b0-979f-ca4e30aa8889
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
