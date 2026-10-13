@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
-        return build(HttpStatus.BAD_REQUEST, "El cuerpo de la peticion no es un JSON valido o tiene valores no permitidos", List.of());
+        return build(HttpStatus.BAD_REQUEST, "El cuerpo de la peticion no es un JSON valido o tiene valores no permitidos", List.of("Tipos de exchange permitidos: " + java.util.Arrays.toString(cl.duoc.rabbitadmin.dto.ExchangeType.values())));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
