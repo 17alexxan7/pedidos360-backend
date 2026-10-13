@@ -1,0 +1,50 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ms-notificaciones
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASS:admin123}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/0e309e18-e3ab-4256-8fcf-5608cfe52cbe/v2.0
+          audiences:
+            - c96eeade-7cad-46b0-979f-ca4e30aa8889
+            - api://c96eeade-7cad-46b0-979f-ca4e30aa8889
+
+# ---- Mensajeria RabbitMQ: nombres centralizados (mismos que ms-pedidos) ----
+app:
+  messaging:
+    exchanges:
+      direct: pedidos.direct
+      topic: pedidos.topic
+      dlx: pedidos.dlx
+    notificaciones:
+      queue: cola.notificaciones
+      dlq: cola.notificaciones.dlq
+      routing-key: pedido.creado.#
+      dlq-routing-key: notificaciones.dead
+    tickets:
+      queue: cola.tickets
+      dlq: cola.tickets.dlq
+      routing-key: pedido.ticket
+      dlq-routing-key: tickets.dead
+    documentos:
+      queue: cola.documentos
+      dlq: cola.documentos.dlq
+      routing-key: pedido.documento
+      dlq-routing-key: documentos.dead
+    events:
+      pedido-creado: pedido.creado
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
