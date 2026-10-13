@@ -10,12 +10,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app.messaging")
 public record MessagingProperties(
         Exchanges exchanges,
+        Events events,
         Route notificaciones,
         Route tickets,
         Route documentos) {
 
     /** Exchanges: direct, topic y dead-letter (DLX). */
     public record Exchanges(String direct, String topic, String dlx) {
+    }
+
+    /** Routing keys con las que se publican los eventos. */
+    public record Events(String pedidoCreado) {
     }
 
     /** Ruta de un caso de uso: cola principal, su DLQ y las routing keys. */

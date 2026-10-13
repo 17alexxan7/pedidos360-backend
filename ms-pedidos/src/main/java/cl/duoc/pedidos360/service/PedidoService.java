@@ -1,5 +1,6 @@
 package cl.duoc.pedidos360.service;
 
+import cl.duoc.pedidos360.messaging.PedidoEventPublisher;
 import cl.duoc.pedidos360.model.Pedido;
 import org.springframework.stereotype.Service;
 
@@ -15,13 +16,16 @@ public class PedidoService {
     private final Map<Long, Pedido> pedidos = new ConcurrentHashMap<>();
     private final AtomicLong contadorId = new AtomicLong(1);
 
-    public PedidoService() {
+    private final PedidoEventPublisher publisher;
+
+    public PedidoService(PedidoEventPublisher publisher) {
+        this.publisher = publisher;
         /*
          * Datos de ejemplo para poder probar los endpoints
          * apenas se levanta el backend.
          */
-        crear(new Pedido(null, "Ana Pérez", "Notebook", 1, "PENDIENTE"));
-        crear(new Pedido(null, "Juan Soto", "Mouse inalámbrico", 2, "ENVIADO"));
+        guardar(new Pedido(null, "Ana Pérez", "Notebook", 1, "PENDIENTE"));
+        guardar(new Pedido(null, "Juan Soto", "Mouse inalámbrico", 2, "ENVIADO"));
     }
 
     public List<Pedido> listarTodos() {
@@ -33,6 +37,12 @@ public class PedidoService {
     }
 
     public Pedido crear(Pedido pedido) {
+        Pedido creado = guardar(pedido);
+        publisher.publicarPedidoCreado(creado);
+        return creado;
+    }
+
+    private Pedido guardar(Pedido pedido) {
         Long nuevoId = contadorId.getAndIncrement();
         pedido.setId(nuevoId);
 
