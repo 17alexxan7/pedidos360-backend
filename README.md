@@ -64,3 +64,21 @@ Errores: 400 (validación), 404 (no existe), 502 (falla RabbitMQ). Cuerpo: `{sta
 3. Compilar: `.\mvnw.cmd clean package -DskipTests`
 
 Credenciales de RabbitMQ y BD por variables de entorno (`RABBITMQ_HOST/PORT/USER/PASS`); no se versionan.
+
+## Base de datos (ms-pedidos)
+
+PostgreSQL en la nube (Neon). `ms-pedidos` persiste los pedidos con Spring Data JPA: entidad `Pedido` (tabla `pedidos`) y `ddl-auto=update`. Al arrancar con la tabla vacía inserta 2 pedidos de ejemplo, sin publicar eventos.
+
+Variables de entorno (no se versionan):
+
+| Variable | Valor |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://<host>/<base>?sslmode=require` |
+| `DB_USER` | usuario de la BD |
+| `DB_PASS` | clave de la BD |
+
+En PowerShell: `$env:DB_URL = "..."; $env:DB_USER = "..."; $env:DB_PASS = "..."` antes de ejecutar el jar.
+
+## Pruebas
+
+`.\mvnw.cmd test` dentro de cada servicio (JUnit 5 + Mockito, sin RabbitMQ ni Entra ID). El test de contexto de `ms-pedidos` solo se ejecuta si `DB_URL` está definida.
