@@ -1,9 +1,21 @@
 package cl.duoc.pedidos360.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 
+/** Pedido persistido en PostgreSQL (tabla "pedidos"). */
+@Entity
+@Table(name = "pedidos")
 public class Pedido {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String cliente;
     private String producto;
@@ -21,6 +33,13 @@ public class Pedido {
         this.cantidad = cantidad;
         this.estado = estado;
         this.fechaCreacion = LocalDateTime.now();
+    }
+
+    @PrePersist
+    void asignarFechaCreacion() {
+        if (fechaCreacion == null) {
+            fechaCreacion = LocalDateTime.now();
+        }
     }
 
     public Long getId() {
@@ -71,4 +90,3 @@ public class Pedido {
         this.fechaCreacion = fechaCreacion;
     }
 }
-
