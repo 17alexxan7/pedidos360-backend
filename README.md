@@ -82,3 +82,5 @@ En PowerShell: `$env:DB_URL = "..."; $env:DB_USER = "..."; $env:DB_PASS = "..."`
 ## Pruebas
 
 `.\mvnw.cmd test` dentro de cada servicio (JUnit 5 + Mockito, sin RabbitMQ ni Entra ID). El test de contexto de `ms-pedidos` solo se ejecuta si `DB_URL` está definida.
+## Despliegue en la nube
+Ver [DESPLIEGUE.md](DESPLIEGUE.md).
