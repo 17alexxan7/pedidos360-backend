@@ -1,0 +1,48 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: ms-analitica
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    consumer:
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.block.ms: 3000
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+    listener:
+      missing-topics-fatal: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/0e309e18-e3ab-4256-8fcf-5608cfe52cbe/v2.0
+          audiences:
+            - c96eeade-7cad-46b0-979f-ca4e30aa8889
+            - api://c96eeade-7cad-46b0-979f-ca4e30aa8889
+
+app:
+  kafka:
+    topics:
+      eventos: pedidos.eventos
+      metricas: pedidos.metricas
+      eventos-dlt: pedidos.eventos.DLT
+    groups:
+      analitica: analitica-metricas
+      auditoria: analitica-auditoria
+    events:
+      pedido-creado: PEDIDO_CREADO
+    retry:
+      intervalo-ms: 1000
+      max-reintentos: 2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
