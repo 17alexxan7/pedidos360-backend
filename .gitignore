@@ -32,3 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 backend.zip
+
+### Logs y secretos ###
+*.log
+.env
+.env.*

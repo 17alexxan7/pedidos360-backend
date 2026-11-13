@@ -84,3 +84,52 @@ En PowerShell: `$env:DB_URL = "..."; $env:DB_USER = "..."; $env:DB_PASS = "..."`
 `.\mvnw.cmd test` dentro de cada servicio (JUnit 5 + Mockito, sin RabbitMQ ni Entra ID). El test de contexto de `ms-pedidos` solo se ejecuta si `DB_URL` está definida.
 ## Despliegue en la nube
 Ver [DESPLIEGUE.md](DESPLIEGUE.md).
+
+## Eventos con Apache Kafka (Evaluación 3)
+
+Kafka convive con RabbitMQ: `ms-pedidos` publica el mismo pedido en ambos. Los fallos de Kafka solo se registran y nunca impiden crear el pedido. El clúster local se levanta con `infra/kafka/docker-compose.yml`: 3 Zookeeper, 3 brokers (9092-9094) y Kafka UI en `http://localhost:8090`.
+
+Tópicos: `pedidos.eventos` y `pedidos.metricas` (3 particiones, 3 réplicas) y `pedidos.eventos.DLT` (creado por `ms-analitica`).
+
+Flujo: `ms-pedidos`  `pedidos.eventos`  `ms-analitica`  `pedidos.metricas`; los eventos inválidos van a `pedidos.eventos.DLT`.
+
+### ms-kafka-admin (puerto 8086)
+
+Administración de tópicos protegida con JWT de Microsoft Entra ID.
+
+| Método | Ruta | Respuesta |
+|---|---|---|
+| POST | `/api/kafka/topics` | 201 con nombre, particiones y réplicas |
+| GET | `/api/kafka/topics` | 200 con la lista de tópicos |
+| GET | `/api/kafka/topics/{name}` | 200 con el detalle, 404 si no existe |
+| DELETE | `/api/kafka/topics/{name}` | 204, 404 si no existe |
+
+Errores: 400 (datos inválidos), 404 (no existe), 409 (ya existe), 502 (Kafka no disponible), 401 (sin token).
+
+### ms-analitica (puerto 8085)
+
+Consumidor de `pedidos.eventos` que calcula métricas en memoria (se pierden al reiniciar) y publica el resumen en `pedidos.metricas` con clave `global`.
+
+- Grupos de consumidores: `analitica-metricas` (calcula y publica) y `analitica-auditoria` (solo deja traza en el log). Ambos con `auto-offset-reset: earliest`.
+- Idempotencia: un `eventId` repetido se ignora.
+- Errores: JSON roto, mensaje vacío, `tipo` desconocido o campos faltantes lanzan `EventoInvalidoException` y van directo a `pedidos.eventos.DLT` sin reintentos. Cualquier otro error se reintenta 2 veces (1 s de espera) y luego va al DLT. El DLT conserva el mensaje original y agrega cabeceras `kafka_dlt-*` con la causa.
+- Endpoint: `GET /api/analitica/metricas` (JWT; 401 sin token).
+
+Evento de entrada (`pedidos.eventos`):
+
+```json
+{"eventId":"e1","tipo":"PEDIDO_CREADO","pedidoId":7,"cliente":"Ana","producto":"Mouse","cantidad":3,"estado":"PENDIENTE","occurredAt":"2026-11-13T04:00:00Z"}
+```
+
+Mensaje de salida (`pedidos.metricas`, clave `global`):
+
+```json
+{"pedidosTotales":3,"unidadesAcumuladas":6,"pedidosPorEstado":{"PENDIENTE":3},"pedidosPorProducto":{"Mouse":1,"Teclado":2},"actualizadoEn":"2026-11-13T04:08:50Z"}
+```
+
+Cómo probarlo en local:
+
+1. `cd infra\kafka; docker compose up -d`
+2. `java -jar ms-analitica\target\ms-analitica-0.0.1-SNAPSHOT.jar` (no necesita Neon ni RabbitMQ)
+3. En Kafka UI  Produce Message en `pedidos.eventos` (serde `String`), pegar el evento de entrada.
+4. Consultar `GET http://localhost:8085/api/analitica/metricas` con un token Bearer.
