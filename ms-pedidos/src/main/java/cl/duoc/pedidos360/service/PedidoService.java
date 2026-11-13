@@ -1,5 +1,6 @@
 package cl.duoc.pedidos360.service;
 
+import cl.duoc.pedidos360.kafka.PedidoKafkaPublisher;
 import cl.duoc.pedidos360.messaging.PedidoEventPublisher;
 import cl.duoc.pedidos360.model.Pedido;
 import cl.duoc.pedidos360.repository.PedidoRepository;
@@ -14,10 +15,14 @@ public class PedidoService {
 
     private final PedidoRepository repository;
     private final PedidoEventPublisher publisher;
+    private final PedidoKafkaPublisher kafkaPublisher;
 
-    public PedidoService(PedidoRepository repository, PedidoEventPublisher publisher) {
+    public PedidoService(PedidoRepository repository,
+                         PedidoEventPublisher publisher,
+                         PedidoKafkaPublisher kafkaPublisher) {
         this.repository = repository;
         this.publisher = publisher;
+        this.kafkaPublisher = kafkaPublisher;
     }
 
     /*
@@ -43,6 +48,7 @@ public class PedidoService {
     public Pedido crear(Pedido pedido) {
         Pedido creado = guardar(pedido);
         publisher.publicarPedidoCreado(creado);
+        kafkaPublisher.publicarPedidoCreado(creado);
         return creado;
     }
 

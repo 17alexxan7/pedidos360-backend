@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import cl.duoc.pedidos360.kafka.PedidoKafkaPublisher;
 import cl.duoc.pedidos360.messaging.PedidoEventPublisher;
 import cl.duoc.pedidos360.model.Pedido;
 import cl.duoc.pedidos360.repository.PedidoRepository;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 class PedidoServiceTest {
 
+    private PedidoKafkaPublisher kafkaPublisher;
     private PedidoRepository repository;
     private PedidoEventPublisher publisher;
     private PedidoService service;
@@ -29,8 +31,9 @@ class PedidoServiceTest {
     void setUp() {
         repository = mock(PedidoRepository.class);
         publisher = mock(PedidoEventPublisher.class);
+        kafkaPublisher = mock(PedidoKafkaPublisher.class);
         when(repository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
-        service = new PedidoService(repository, publisher);
+        service = new PedidoService(repository, publisher, kafkaPublisher);
     }
 
     @Test
@@ -41,6 +44,7 @@ class PedidoServiceTest {
 
         verify(repository, times(2)).save(any(Pedido.class));
         verifyNoInteractions(publisher);
+        verifyNoInteractions(kafkaPublisher);
     }
 
     @Test
@@ -59,6 +63,7 @@ class PedidoServiceTest {
         assertNull(creado.getId());
         assertEquals("PENDIENTE", creado.getEstado());
         verify(publisher, times(1)).publicarPedidoCreado(creado);
+        verify(kafkaPublisher).publicarPedidoCreado(any(Pedido.class));
     }
 
     @Test
