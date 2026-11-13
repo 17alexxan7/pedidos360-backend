@@ -1,0 +1,20 @@
+name: pedidos360-kafka-ui
+
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    networks: [kafka_cluster]
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pedidos360
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka-1:29092,kafka-2:29092,kafka-3:29092"
+      KAFKA_CLUSTERS_0_ZOOKEEPER: "zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181"
+      DYNAMIC_CONFIG_ENABLED: "false"
+
+networks:
+  kafka_cluster:
+    name: kafka_cluster
+    external: true

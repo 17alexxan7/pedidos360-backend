@@ -1,0 +1,109 @@
+name: pedidos360-kafka
+
+x-zk: &zk-base
+  image: confluentinc/cp-zookeeper:7.6.1
+  networks: [kafka_cluster]
+  restart: unless-stopped
+  environment: &zk-env
+    ZOOKEEPER_CLIENT_PORT: 2181
+    ZOOKEEPER_TICK_TIME: 2000
+    ZOOKEEPER_INIT_LIMIT: 5
+    ZOOKEEPER_SYNC_LIMIT: 2
+    ZOOKEEPER_SERVERS: "zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888"
+    KAFKA_HEAP_OPTS: "-Xms128m -Xmx256m"
+
+x-kafka-env: &kafka-env
+  KAFKA_ZOOKEEPER_CONNECT: "zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181"
+  KAFKA_LISTENERS: "INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092"
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_HEAP_OPTS: "-Xms384m -Xmx512m"
+
+services:
+  zookeeper-1:
+    <<: *zk-base
+    container_name: zookeeper-1
+    hostname: zookeeper-1
+    environment:
+      <<: *zk-env
+      ZOOKEEPER_SERVER_ID: 1
+
+  zookeeper-2:
+    <<: *zk-base
+    container_name: zookeeper-2
+    hostname: zookeeper-2
+    environment:
+      <<: *zk-env
+      ZOOKEEPER_SERVER_ID: 2
+
+  zookeeper-3:
+    <<: *zk-base
+    container_name: zookeeper-3
+    hostname: zookeeper-3
+    environment:
+      <<: *zk-env
+      ZOOKEEPER_SERVER_ID: 3
+
+  kafka-1:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka-1
+    hostname: kafka-1
+    networks: [kafka_cluster]
+    restart: unless-stopped
+    depends_on: [zookeeper-1, zookeeper-2, zookeeper-3]
+    ports:
+      - "9092:9092"
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-1:29092,EXTERNAL://localhost:9092"
+    volumes:
+      - kafka_data_1:/var/lib/kafka/data
+
+  kafka-2:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka-2
+    hostname: kafka-2
+    networks: [kafka_cluster]
+    restart: unless-stopped
+    depends_on: [zookeeper-1, zookeeper-2, zookeeper-3]
+    ports:
+      - "9093:9092"
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-2:29092,EXTERNAL://localhost:9093"
+    volumes:
+      - kafka_data_2:/var/lib/kafka/data
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka-3
+    hostname: kafka-3
+    networks: [kafka_cluster]
+    restart: unless-stopped
+    depends_on: [zookeeper-1, zookeeper-2, zookeeper-3]
+    ports:
+      - "9094:9092"
+    environment:
+      <<: *kafka-env
+      KAFKA_BROKER_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-3:29092,EXTERNAL://localhost:9094"
+    volumes:
+      - kafka_data_3:/var/lib/kafka/data
+
+volumes:
+  kafka_data_1:
+  kafka_data_2:
+  kafka_data_3:
+
+networks:
+  kafka_cluster:
+    name: kafka_cluster
+    driver: bridge
